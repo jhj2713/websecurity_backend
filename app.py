@@ -59,35 +59,33 @@ def upload_file():
             else:
                 mb = 'B'
             
-            result_string=mb+', '+str(minus_list).strip('[]')+', '+file_name + "\n"
+            result_string=mb+', '+str(minus_list).strip('[]')+', '+file_name
             output_f.write(result_string)
         input_f.close()
         output_f.close()
 
         data = pd.read_csv("/home/kimyujeong/hidost/build/output.csv", header=None, error_bad_lines=False)
 
-        data = data.drop(data.columns[-1], axis=1) # 필요 없는 데이터 제거 (파일의 맨 마지막에 파일 경로 저장)
-        data_drop = data.drop(0, axis=1) # 파일 라벨 제거
-        Y = data[0] # 0번째 컬럼에 라벨 저장되어 있음
+        X = data.drop(0, axis=1)
+        Y = data[0]
 
-        datas = pd.DataFrame(data_drop.iloc[:,0:])
-        datas.columns = data_drop.iloc[:,0:].columns
-
-        X = datas.values
+        X = X.drop(X.columns[-1], axis=1)
 
         f = open("/home/kimyujeong/upload_count.txt", "r")
         upload_count = int(f.read())
         f.close()
+   
+        x = X.iloc[:-upload_count]
+        y = Y[:-upload_count]
+        test = X.iloc[-upload_count:]
 
-        x_train, x_test, y_train, y_test = train_test_split(X,Y,test_size=upload_count/len(X),random_state=0)
-        y_train = y_train.to_numpy()
-        y_test = y_test.to_numpy() 
+        x = x.to_numpy()
+        y = y.to_numpy()
 
         rfc = RandomForestClassifier(random_state=0)
-        rfc.fit(x_train, y_train)
+        rfc.fit(x, y)
 
-        predict = rfc.predict(x_test)
-        print(predict)
+        predict = rfc.predict(test)
 
         return render_template('result.html', result=predict, files=filenames)
 
